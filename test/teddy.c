@@ -5,6 +5,7 @@
 
 #include <sop/sop.h>
 #include <ok/ok.h>
+#include <fs/fs.h>
 
 #include "test.h"
 
@@ -37,50 +38,30 @@ static struct {
 } TestState;
 
 static void ResetTestState(void) {
+  TestState.counters.comments = 0;
+  TestState.counters.vertices = 0;
+  TestState.counters.faces = 0;
   memset(&TestState, 0, sizeof(TestState));
 }
 
-TEST(simple) {
+TEST(teddy) {
   ResetTestState();
 
-  const char *src = OBJ(
-    ## This is a comment \n
-    v -0.5 -0.5 +0.5 \n
-    v +0.5 -0.5 +0.5 \n
-    v -0.5 +0.5 +0.5 \n
-    v +0.5 +0.5 +0.5 \n
-    v -0.5 -0.5 -0.5 \n
-    v +0.5 -0.5 -0.5 \n
-    v -0.5 +0.5 -0.5 \n
-    v +0.5 +0.5 -0.5 \n
-    f 0 1 3 \n
-    f 0 3 2 \n
-    f 1 5 7 \n
-    f 1 7 3 \n
-    f 5 4 6 \n
-    f 5 6 7 \n
-    f 4 0 2 \n
-    f 4 2 6 \n
-    f 4 5 1 \n
-    f 4 1 0 \n
-    f 2 3 7 \n
-    f 2 7 6 \n
-  );
+  const char *src = fs_read("fixtures/teddy.obj");
 
   assert(SOP_EOK == sop_parser_init(&parser, options));
-  ok("simple: sop_parser_init");
+  ok("teddy: sop_parser_init");
   assert(SOP_EOK == sop_parser_execute(&parser, src, strlen(src)));
-  ok("simple: sop_parser_exec");
+  ok("teddy: sop_parser_exec");
 
-  assert(1 == TestState.counters.comments);
-  ok("simple: comments parsed");
+  assert(0 == TestState.counters.comments);
+  ok("teddy: comments parsed");
 
-  assert(8 == TestState.counters.vertices);
-  ok("simple: vertices parsed");
+  assert(1598 == TestState.counters.vertices);
+  ok("teddy: vertices parsed");
 
-  assert(12 == TestState.counters.faces);
-  ok("simple: faces parsed");
-
+  assert(3192 == TestState.counters.faces);
+  ok("teddy: faces parsed");
   ok_done();
   return 0;
 }
@@ -93,7 +74,7 @@ oncomment(const sop_parser_state_t *state,
   if (line.data && strlen((char *) line.data)) {
     assert(line.length);
     sprintf(message,
-            "simple: .oncomment: comment line %d has length set",
+            "teddy: .oncomment: comment line %d has length set",
             TestState.counters.comments);
     ok(message);
   }
@@ -104,19 +85,9 @@ static int
 onvertex(const sop_parser_state_t *state,
          const sop_parser_line_state_t line) {
   // (x y z) - we ignore w component
-  float vertex[3];
-  char message[BUFSIZ];
   TestState.counters.vertices++;
   if (line.data) {
     assert(line.length);
-    sprintf(message,
-            "simple: .onvertex: vertex line %d has length set",
-            TestState.counters.vertices);
-    ok(message);
-    memcpy(vertex, line.data, sizeof(vertex));
-    assert(0 != vertex[0]);
-    assert(0 != vertex[1]);
-    assert(0 != vertex[2]);
   }
 
   return SOP_EOK;
@@ -126,18 +97,8 @@ static int
 onface(const sop_parser_state_t *state,
        const sop_parser_line_state_t line) {
   TestState.counters.faces++;
-  int faces[3];
-  char message[BUFSIZ];
   if (line.data) {
     assert(line.length);
-    sprintf(message,
-            "simple: .onface: face line %d has length set",
-            TestState.counters.faces);
-    ok(message);
-    memcpy(faces, line.data, sizeof(faces));
-    assert(faces[0] >= 0 && faces[0] <= 7);
-    assert(faces[1] >= 0 && faces[1] <= 7);
-    assert(faces[2] >= 0 && faces[2] <= 7);
   }
   return SOP_EOK;
 }

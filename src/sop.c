@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <sop.h>
+#include <sop/sop.h>
 
 static int
 ontexture(const sop_parser_state_t *state,
@@ -12,7 +12,6 @@ ontexture(const sop_parser_state_t *state,
 static int
 oncomment(const sop_parser_state_t *state,
           const sop_parser_line_state_t line) {
-  printf("text\n");
   return SOP_EOK;
 }
 
@@ -63,13 +62,14 @@ sop_parser_execute(sop_parser_t *parser,
   sop_parser_state_t state;
   sop_enum_t type = SOP_NULL;
 
-  // setup pointers
+  // setup sate pointers
   state.line = &line;
   state.data = parser->options->data;
 
   // source state
   size_t bufsize = 0;
   char buffer[BUFSIZ];
+  char prev = 0;
   char ch0 = 0;
   char ch1 = 0;
   int lineno = 0;
@@ -78,18 +78,40 @@ sop_parser_execute(sop_parser_t *parser,
   // init buffer
   memset(buffer, 0, BUFSIZ);
 
+#define RESET_LINE_STATE {   \
+  memset(buffer, 0, BUFSIZ); \
+  lineno++;                  \
+  bufsize = 0;               \
+  colno = 0;                 \
+}
+
   for (int i = 0; i < length; ++i) {
     ch0 = source[i];
     ch1 = source[i + 1];
 
-    if (' ' == ch0 && 0 == colno) {
+    if (i > 0) {
+      prev = source[i - 1];
+    }
+
+    if (' ' == ch0 && '\n' == prev) {
+      RESET_LINE_STATE;
       continue;
+    }
+
+    if (' ' == ch0 && 0 == colno) {
+      ch0 = ch1;
+      ch1 = source[++i + 1];
     }
 
     // we've reached the end of the line and now need
     // to notify the consumer with a callback, state error,
     // or continue if there is nothing to do
     if ('\n' == ch0) {
+      if (!bufsize) {
+        RESET_LINE_STATE;
+        continue;
+      }
+      line.data = 0;
       line.type = type;
       line.length = bufsize;
       switch (type) {
@@ -124,7 +146,7 @@ sop_parser_execute(sop_parser_t *parser,
         }
 
         case SOP_DIRECTIVE_FACE: {
-          int faces[3];
+          unsigned int faces[3];
           sscanf(buffer, "%d %d %d", &faces[0], &faces[1], &faces[2]);
           line.data = faces;
           parser->callbacks.onface(&state, line);
@@ -140,10 +162,7 @@ sop_parser_execute(sop_parser_t *parser,
           return SOP_OOB;
       }
 
-      memset(buffer, 0, BUFSIZ);
-      lineno++;
-      bufsize = 0;
-      colno = 0;
+      RESET_LINE_STATE;
       continue;
     }
 
@@ -180,4 +199,5 @@ sop_parser_execute(sop_parser_t *parser,
     colno++;
   }
   return SOP_EOK;
+#undef RESET_LINE_STATE
 }

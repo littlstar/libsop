@@ -2,10 +2,10 @@
 #define SOP_TEST_H
 
 // macro to define test
-#define TEST(name) int test_ ## name (void)
+#define TEST(TEST_NAME) int test_ ## TEST_NAME (void)
 
 // macro to run a test
-#define RUN(name) test_ ## name ();
+#define RUN(TEST_NAME) test_ ## TEST_NAME ();
 
 // macro to define OBJ file format as a string
 #define XOBJ(X) #X
