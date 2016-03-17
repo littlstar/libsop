@@ -1,5 +1,11 @@
 ## Project settings
 PROJECT_NAME ?= sop
+PREFIX ?= /usr/local
+
+## Project command dependencies
+MKDIR ?= mkdir -p
+RM ?= rm -f
+CP ?= cp -f
 
 ## Source files
 SRC += $(wildcard src/*.c)
@@ -43,6 +49,19 @@ clean:
 test: $(TARGET_STATIC)
 	$(MAKE) -C $@
 
+## Installs library into system
+.PHONY: install
+install: $(TARGET_STATIC)
+	$(CP) -r include/* $(PREFIX)/include/
+	$(CP)  $(TARGET_STATIC) $(PREFIX)/lib
+
+## Uninstalls library from system
+.PHONY: uninstall
+uninstall:
+	$(RM) -r $(PREFIX)/include/$(PROJECT_NAME)
+	$(RM) $(PREFIX)/lib/$(TARGET_STATIC)
+
+## Cleans test directory
 .PHONY: test/clean
 test/clean:
 	$(MAKE) clean -C test
