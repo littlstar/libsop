@@ -108,11 +108,7 @@ oncomment(const sop_parser_state_t *state,
   char message[BUFSIZ];
   TestState.counters.comments++;
   if (line.data && strlen((char *) line.data)) {
-    assert(line.length);
-    sprintf(message,
-            "simple: .oncomment: comment line %d has length set",
-            TestState.counters.comments);
-    ok(message);
+    // do something with comment
   }
   return SOP_EOK;
 }
