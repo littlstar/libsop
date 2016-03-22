@@ -35,7 +35,7 @@ onface(const sop_parser_state_t *state,
 
 int
 sop_parser_init(sop_parser_t *parser,
-                const sop_parser_options_t options) {
+                sop_parser_options_t *options) {
   if (!parser) return SOP_EMEM;
   memset(parser, 0, sizeof(sop_parser_t));
   parser->callbacks.ontexture = ontexture;
@@ -43,8 +43,8 @@ sop_parser_init(sop_parser_t *parser,
   parser->callbacks.onvertex = onvertex;
   parser->callbacks.onnormal = onnormal;
   parser->callbacks.onface = onface;
-  memcpy(&parser->callbacks, &options.callbacks, sizeof(options.callbacks));
-  parser->options = &options;
+  memcpy(&parser->callbacks, &options->callbacks, sizeof(options->callbacks));
+  parser->options = options;
   return SOP_EOK;
 }
 
@@ -54,8 +54,11 @@ sop_parser_execute(sop_parser_t *parser,
                    const char *source,
                    size_t length) {
   // handle poor state and input
-  if (!parser) return SOP_EMEM;
-  if (!source || 0 == length) return SOP_EINVALID_SOURCE;
+  if (!parser) {
+    return SOP_EMEM;
+  } else if (!source || 0 == length) {
+    return SOP_EINVALID_SOURCE;
+  }
 
   // sop state
   sop_parser_line_state_t line;
@@ -146,8 +149,52 @@ sop_parser_execute(sop_parser_t *parser,
         }
 
         case SOP_DIRECTIVE_FACE: {
-          unsigned int faces[3];
-          sscanf(buffer, "%d %d %d", &faces[0], &faces[1], &faces[2]);
+          int faces[3][3] = {
+            {-1 -1, -1},
+            {-1 -1, -1},
+            {-1 -1, -1},
+          };
+
+          int face[3] = {-1, -1, -1};
+          int section = 0;
+          int l = 0;
+          int size = 0;
+          char buf[BUFSIZ];
+          for (int j = 0; j < bufsize; ++j) {
+            char c = buffer[j];
+            //char n = buffer[j + 1];
+            char p = j > 0 ? buffer[j - 1] : c;
+
+            // skip white space in beginning of buffer
+            if (j == 0 && ' ' == c) {
+              continue;
+            }
+
+            // handle integers otherwise parse character
+            if (c >= 0x30 && c <= 0x39) {
+              buf[size++] = c;
+            } else switch (c) {
+              case '/':
+                if ('/' == p) {
+                  face[l++] = -1;
+                } else {
+                  sscanf(buf, "%d", &face[l++]);
+                }
+                break;
+
+              case ' ':
+                sscanf(buf, "%d", &face[l++]);
+                memset(buf, 0, BUFSIZ);
+                size = 0;
+                l = 0;
+                memcpy(faces[section++], face, sizeof(face));
+                break;
+
+              default:
+                return SOP_OOB;
+            }
+          }
+
           line.data = faces;
           parser->callbacks.onface(&state, line);
           break;

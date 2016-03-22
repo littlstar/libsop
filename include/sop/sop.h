@@ -33,6 +33,15 @@ enum sop_enum {
   // represents a empty state/value
   SOP_NULL = 0,
 
+  /**
+   * SOP errors
+   */
+
+  SOP_EOK,
+  SOP_EMEM,
+  SOP_EINVALID_OPTIONS,
+  SOP_EINVALID_SOURCE,
+
   // represents a comment value
   SOP_COMMENT,
 
@@ -50,15 +59,6 @@ enum sop_enum {
   SOP_DIRECTIVE_VERTEX_TEXTURE,
   SOP_DIRECTIVE_VERTEX_NORMAL,
   SOP_DIRECTIVE_FACE,
-
-  /**
-   * SOP errors
-   */
-
-  SOP_EOK,
-  SOP_EMEM,
-  SOP_EINVALID_OPTIONS,
-  SOP_EINVALID_SOURCE,
 };
 
 /**
@@ -98,7 +98,7 @@ struct sop_parser_line_state {
   sop_enum_t type;
 
   // line directive
-  const char *directive;
+  char *directive;
 
   // current line number of the source
   int lineno;
@@ -134,7 +134,7 @@ struct sop_parser {
   sop_parser_state_t *state;
 
   // pointer to parser options
-  const sop_parser_options_t *options;
+  sop_parser_options_t *options;
 
   // user defined callbacks given from sop_parser_options
   struct { SOP_PARSER_CALLBACK_FIELDS } callbacks;
@@ -146,7 +146,7 @@ struct sop_parser {
 
 int
 sop_parser_init(sop_parser_t *parser,
-                const sop_parser_options_t options);
+                sop_parser_options_t *options);
 
 /**
  * Execute SOP parser for a given source.

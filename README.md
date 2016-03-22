@@ -129,9 +129,13 @@ onvertex(const sop_parser_state_t *state,
 static int
 onface(const sop_parser_state_t *state,
        const sop_parser_line_state_t line) {
-  unsigned int faces[3];
+  int faces[3][3];
+  int vf[3], vtf[3], vnf[3]; // vertex, texture, & normal faces
   if (line.data) {
-    memcpy(faces, line.data, sizeof(vertex));
+    memcpy(faces, line.data, sizeof(faces));
+    memcpy(vf, faces[0], sizeof(faces[0]));
+    memcpy(vtf, faces[1], sizeof(faces[1]));
+    memcpy(vnf, faces[2], sizeof(faces[2]));
     // do something face data
   }
   return SOP_EOK;

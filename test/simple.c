@@ -43,31 +43,31 @@ static void ResetTestState(void) {
 TEST(simple) {
   ResetTestState();
 
-  const char *src = OBJ(
-    ## This is a comment \n
-    v -0.5 -0.5 +0.5 \n
-    v +0.5 -0.5 +0.5 \n
-    v -0.5 +0.5 +0.5 \n
-    v +0.5 +0.5 +0.5 \n
-    v -0.5 -0.5 -0.5 \n
-    v +0.5 -0.5 -0.5 \n
-    v -0.5 +0.5 -0.5 \n
-    v +0.5 +0.5 -0.5 \n
-    f 0 1 3 \n
-    f 0 3 2 \n
-    f 1 5 7 \n
-    f 1 7 3 \n
-    f 5 4 6 \n
-    f 5 6 7 \n
-    f 4 0 2 \n
-    f 4 2 6 \n
-    f 4 5 1 \n
-    f 4 1 0 \n
-    f 2 3 7 \n
-    f 2 7 6 \n
-  );
+  const char *src = ""
+    "## This is a comment \n"
+    "v -0.5 -0.5 +0.5 \n"
+    "v +0.5 -0.5 +0.5 \n"
+    "v -0.5 +0.5 +0.5 \n"
+    "v +0.5 +0.5 +0.5 \n"
+    "v -0.5 -0.5 -0.5 \n"
+    "v +0.5 -0.5 -0.5 \n"
+    "v -0.5 +0.5 -0.5 \n"
+    "v +0.5 +0.5 -0.5 \n"
+    "f 0 1 3 \n"
+    "f 0 3 2 \n"
+    "f 1 5 7 \n"
+    "f 1 7 3 \n"
+    "f 5 4 6 \n"
+    "f 5 6 7 \n"
+    "f 4 0 2 \n"
+    "f 4 2 6 \n"
+    "f 4 5 1 \n"
+    "f 4 1 0 \n"
+    "f 2 3 7 \n"
+    "f 2 7 6 \n"
+    "";
 
-  assert(SOP_EOK == sop_parser_init(&parser, options));
+  assert(SOP_EOK == sop_parser_init(&parser, &options));
   ok("simple: sop_parser_init");
   assert(SOP_EOK == sop_parser_execute(&parser, src, strlen(src)));
   ok("simple: sop_parser_exec");
@@ -126,7 +126,7 @@ static int
 onface(const sop_parser_state_t *state,
        const sop_parser_line_state_t line) {
   TestState.counters.faces++;
-  int faces[3];
+  int faces[3][3];
   char message[BUFSIZ];
   if (line.data) {
     assert(line.length);
@@ -135,9 +135,16 @@ onface(const sop_parser_state_t *state,
             TestState.counters.faces);
     ok(message);
     memcpy(faces, line.data, sizeof(faces));
-    assert(faces[0] >= 0 && faces[0] <= 7);
-    assert(faces[1] >= 0 && faces[1] <= 7);
-    assert(faces[2] >= 0 && faces[2] <= 7);
+    assert(faces[0][0] >= 0 && faces[0][0] <= 7);
+    assert(faces[1][0] >= 0 && faces[1][0] <= 7);
+    assert(faces[2][0] >= 0 && faces[2][0] <= 7);
+
+    assert(-1 == faces[0][1]);
+    assert(-1 == faces[0][2]);
+    assert(-1 == faces[1][1]);
+    assert(-1 == faces[1][2]);
+    assert(-1 == faces[2][1]);
+    assert(-1 == faces[2][2]);
   }
   return SOP_EOK;
 }

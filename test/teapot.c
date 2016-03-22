@@ -49,7 +49,7 @@ TEST(teapot) {
 
   const char *src = fs_read("fixtures/teapot.obj");
 
-  assert(SOP_EOK == sop_parser_init(&parser, options));
+  assert(SOP_EOK == sop_parser_init(&parser, &options));
   ok("teapot: sop_parser_init");
   assert(SOP_EOK == sop_parser_execute(&parser, src, strlen(src)));
   ok("teapot: sop_parser_exec");

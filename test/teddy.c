@@ -49,7 +49,7 @@ TEST(teddy) {
 
   const char *src = fs_read("fixtures/teddy.obj");
 
-  assert(SOP_EOK == sop_parser_init(&parser, options));
+  assert(SOP_EOK == sop_parser_init(&parser, &options));
   ok("teddy: sop_parser_init");
   assert(SOP_EOK == sop_parser_execute(&parser, src, strlen(src)));
   ok("teddy: sop_parser_exec");
