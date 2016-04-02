@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include "ok.h"
@@ -17,9 +16,9 @@ static int ok_count_;
 static int ok_expected_;
 
 void
-ok (char *message) {
+ok (const char *message) {
   if (NULL == message) {
-    message = "";
+    message = (const char *) "";
   }
   printf("ok %d %s\n", ++ok_count_, message);
 }

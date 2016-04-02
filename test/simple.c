@@ -12,6 +12,9 @@ static int
 oncomment(const sop_parser_state_t *state,
           const sop_parser_line_state_t line);
 static int
+ontexture(const sop_parser_state_t *state,
+          const sop_parser_line_state_t line);
+static int
 onvertex(const sop_parser_state_t *state,
          const sop_parser_line_state_t line);
 
@@ -23,6 +26,7 @@ static sop_parser_t parser;
 static sop_parser_options_t options = {
   .callbacks = {
     .oncomment = oncomment,
+    .ontexture = ontexture,
     .onvertex = onvertex,
     .onface = onface,
   }
@@ -31,6 +35,7 @@ static sop_parser_options_t options = {
 static struct {
   struct {
     int comments;
+    int textures;
     int vertices;
     int faces;
   } counters;
@@ -53,6 +58,14 @@ TEST(simple) {
     "v +0.5 -0.5 -0.5 \n"
     "v -0.5 +0.5 -0.5 \n"
     "v +0.5 +0.5 -0.5 \n"
+    "vt 0.539062 0.812500 0.000000\n"
+    "vt 0.546875 0.812500 0.000000\n"
+    "vt 0.554687 0.812500 0.000000\n"
+    "vt 0.562500 0.812500 0.000000\n"
+    "vt 0.570312 0.812500 0.000000\n"
+    "vt 0.578125 0.812500 0.000000\n"
+    "vt 0.585937 0.812500 0.000000\n"
+    "vt 0.593750 0.812500 0.000000\n"
     "f 0 1 3 \n"
     "f 0 3 2 \n"
     "f 1 5 7 \n"
@@ -78,6 +91,9 @@ TEST(simple) {
   assert(8 == TestState.counters.vertices);
   ok("simple: vertices parsed");
 
+  assert(8 == TestState.counters.textures);
+  ok("simple: textures parsed");
+
   assert(12 == TestState.counters.faces);
   ok("simple: faces parsed");
 
@@ -95,6 +111,21 @@ oncomment(const sop_parser_state_t *state,
     sprintf(message,
             "simple: .oncomment: comment line %d has length set",
             TestState.counters.comments);
+    ok(message);
+  }
+  return SOP_EOK;
+}
+
+static int
+ontexture(const sop_parser_state_t *state,
+          const sop_parser_line_state_t line) {
+  char message[BUFSIZ];
+  TestState.counters.textures++;
+  if (line.data && line.length) {
+    assert(line.length);
+    sprintf(message,
+            "simple: .ontexture: texture line %d has length set",
+            TestState.counters.textures);
     ok(message);
   }
   return SOP_EOK;
@@ -136,13 +167,13 @@ onface(const sop_parser_state_t *state,
     ok(message);
     memcpy(faces, line.data, sizeof(faces));
     assert(faces[0][0] >= 0 && faces[0][0] <= 7);
-    assert(faces[1][0] >= 0 && faces[1][0] <= 7);
-    assert(faces[2][0] >= 0 && faces[2][0] <= 7);
+    assert(faces[0][1] >= 0 && faces[0][1] <= 7);
+    assert(faces[0][2] >= 0 && faces[0][2] <= 7);
 
-    assert(-1 == faces[0][1]);
-    assert(-1 == faces[0][2]);
+    assert(-1 == faces[1][0]);
     assert(-1 == faces[1][1]);
     assert(-1 == faces[1][2]);
+    assert(-1 == faces[2][0]);
     assert(-1 == faces[2][1]);
     assert(-1 == faces[2][2]);
   }

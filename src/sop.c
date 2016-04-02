@@ -38,12 +38,14 @@ sop_parser_init(sop_parser_t *parser,
                 sop_parser_options_t *options) {
   if (!parser) return SOP_EMEM;
   memset(parser, 0, sizeof(sop_parser_t));
-  parser->callbacks.ontexture = ontexture;
-  parser->callbacks.oncomment = oncomment;
-  parser->callbacks.onvertex = onvertex;
-  parser->callbacks.onnormal = onnormal;
-  parser->callbacks.onface = onface;
-  memcpy(&parser->callbacks, &options->callbacks, sizeof(options->callbacks));
+#define SET_CALLBACK_IF(cb) \
+  parser->callbacks. cb = options->callbacks. cb ? options->callbacks. cb : cb;
+  SET_CALLBACK_IF(oncomment)
+  SET_CALLBACK_IF(ontexture)
+  SET_CALLBACK_IF(onvertex)
+  SET_CALLBACK_IF(onnormal)
+  SET_CALLBACK_IF(onface)
+#undef SET_CALLBACK_IF
   parser->options = options;
   return SOP_EOK;
 }
@@ -96,15 +98,23 @@ sop_parser_execute(sop_parser_t *parser,
       prev = source[i - 1];
     }
 
-    if (' ' == ch0 && '\n' == prev) {
+    if ((' ' == ch0 && '\n' == prev)) {
       RESET_LINE_STATE;
       continue;
     }
 
     if (' ' == ch0 && 0 == colno) {
       ch0 = ch1;
-      ch1 = source[++i + 1];
+      ch1 = source[++i];
     }
+
+#define CALL_CALLBACK_IF(cb, ...) {              \
+  int rc = SOP_EOK;                              \
+  if (parser->callbacks. cb) {                   \
+    rc = parser->callbacks. cb(__VA_ARGS__);     \
+    if (rc != SOP_EOK) return rc;                \
+  }                                              \
+}
 
     // we've reached the end of the line and now need
     // to notify the consumer with a callback, state error,
@@ -117,6 +127,7 @@ sop_parser_execute(sop_parser_t *parser,
       line.data = 0;
       line.type = type;
       line.length = bufsize;
+      line.data = (void *) buffer;
       switch (type) {
         // continue until something meaningful
         case SOP_NULL: break;
@@ -124,18 +135,26 @@ sop_parser_execute(sop_parser_t *parser,
         // handle comments
         case SOP_COMMENT: {
           line.data = (void *) buffer;
-          parser->callbacks.oncomment(&state, line);
+          CALL_CALLBACK_IF(oncomment, &state, line);
           break;
         }
 
         // handle directives
         case SOP_DIRECTIVE_VERTEX_TEXTURE: {
-          parser->callbacks.ontexture(&state, line);
+          float vertex[4];
+          sscanf(buffer, "%f %f %f %f",
+              &vertex[0], &vertex[1], &vertex[2], &vertex[3]);
+          line.data = vertex;
+          CALL_CALLBACK_IF(ontexture, &state, line);
           break;
         }
 
         case SOP_DIRECTIVE_VERTEX_NORMAL: {
-          parser->callbacks.onnormal(&state, line);
+          float vertex[4];
+          sscanf(buffer, "%f %f %f %f",
+              &vertex[0], &vertex[1], &vertex[2], &vertex[3]);
+          line.data = vertex;
+          CALL_CALLBACK_IF(onnormal, &state, line);
           break;
         }
 
@@ -144,59 +163,97 @@ sop_parser_execute(sop_parser_t *parser,
           sscanf(buffer, "%f %f %f %f",
               &vertex[0], &vertex[1], &vertex[2], &vertex[3]);
           line.data = vertex;
-          parser->callbacks.onvertex(&state, line);
+          CALL_CALLBACK_IF(onvertex, &state, line);
           break;
         }
 
         case SOP_DIRECTIVE_FACE: {
-          int faces[3][3] = {
-            {-1 -1, -1},
-            {-1 -1, -1},
-            {-1 -1, -1},
-          };
+          int maxfaces = 16;
+          int faces[3][maxfaces];
 
-          int face[3] = {-1, -1, -1};
-          int section = 0;
-          int l = 0;
-          int size = 0;
+          // vertex faces
+          int *vf = faces[0];
+          int x = 0;
+          // vertex texture faces
+          int *vtf = faces[1];
+          int y = 0;
+          // vertex normal faces
+          int *vnf = faces[2];
+          int z = 0;
+
+          for (int i = 0; i < maxfaces; i++) {
+            vf[i] = -1;
+            vtf[i] = -1;
+            vnf[i] = -1;
+          }
+
+          // current char buffer
+          size_t size = 0;
           char buf[BUFSIZ];
+          memset(buf, 0, BUFSIZ);
+
+          // current face scope
+          enum { READ = 0, VERTEX, TEXTURE, NORMAL };
+          int scope = VERTEX;
+
           for (int j = 0; j < bufsize; ++j) {
             char c = buffer[j];
-            //char n = buffer[j + 1];
-            char p = j > 0 ? buffer[j - 1] : c;
 
-            // skip white space in beginning of buffer
-            if (j == 0 && ' ' == c) {
+            // skip white space at beginning of line
+            if (0 == size && ' ' == c) {
               continue;
             }
 
-            // handle integers otherwise parse character
-            if (c >= 0x30 && c <= 0x39) {
+            if (j == bufsize - 1) {
               buf[size++] = c;
-            } else switch (c) {
-              case '/':
-                if ('/' == p) {
-                  face[l++] = -1;
-                } else {
-                  sscanf(buf, "%d", &face[l++]);
-                }
-                break;
+              goto read_face_data;
+            }
 
+            switch (c) {
+              case '/':
+              case '\t':
+              case '\n':
               case ' ':
-                sscanf(buf, "%d", &face[l++]);
-                memset(buf, 0, BUFSIZ);
-                size = 0;
-                l = 0;
-                memcpy(faces[section++], face, sizeof(face));
-                break;
+                goto read_face_data;
 
               default:
-                return SOP_OOB;
+                buf[size++] = c;
+                continue;
             }
+
+read_face_data:
+            switch (scope) {
+              case VERTEX:
+                sscanf(buf, "%d", &vf[x++]);
+                break;
+
+              case TEXTURE:
+                sscanf(buf, "%d", &vtf[y++]);
+                break;
+
+              case NORMAL:
+                sscanf(buf, "%d", &vnf[z++]);
+                break;
+            }
+
+            switch (c) {
+              case '/':
+                scope++;
+                break;
+
+              case '\n':
+              case '\t':
+              case ' ':
+                scope = VERTEX;
+                break;
+            }
+
+            memset(buf, 0, BUFSIZ);
+            size = 0;
           }
 
           line.data = faces;
-          parser->callbacks.onface(&state, line);
+          CALL_CALLBACK_IF(onface, &state, line)
           break;
         }
 
@@ -237,9 +294,18 @@ sop_parser_execute(sop_parser_t *parser,
         type = SOP_COMMENT;
         line.directive = "#";
       } else {
+        switch (ch0) {
+          case '\n':
+            RESET_LINE_STATE;
+            continue;
+        }
+
         type = SOP_NULL;
       }
     } else {
+      if (0 == bufsize && ' ' == ch0) {
+        continue;
+      }
       buffer[bufsize++] = ch0;
     }
 
@@ -247,4 +313,5 @@ sop_parser_execute(sop_parser_t *parser,
   }
   return SOP_EOK;
 #undef RESET_LINE_STATE
+#undef CALL_CALLBACK_IF
 }

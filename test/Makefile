@@ -7,6 +7,8 @@ CFLAGS += -I../include
 CFLAGS += -I../deps
 CFLAGS += -std=c99
 CFLAGS += -Wall
+CFLAGS += -framework OpenGL
+CFLAGS += -framework Foundation
 
 export CFLAGS
 

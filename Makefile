@@ -10,9 +10,6 @@ CP ?= cp -f
 ## Source files
 SRC += $(wildcard src/*.c)
 
-## Dependency source files
-SRC += $(wildcard deps/*/*.c)
-
 ## Source objects
 OBJS := $(SRC:.c=.o)
 
