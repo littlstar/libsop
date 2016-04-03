@@ -60,8 +60,37 @@ $ gcc -Ideps deps/sop/*.c *.c
 
 ### Usage/Example
 
+Consider this simple model describing a cube
+
+```obj
+## This is a comment
+v -0.5 -0.5 +0.5
+v +0.5 -0.5 +0.5
+v -0.5 +0.5 +0.5
+v +0.5 +0.5 +0.5
+v -0.5 -0.5 -0.5
+v +0.5 -0.5 -0.5
+v -0.5 +0.5 -0.5
+v +0.5 +0.5 -0.5
+f 0 1 3
+f 0 3 2
+f 1 5 7
+f 1 7 3
+f 5 4 6
+f 5 6 7
+f 4 0 2
+f 4 2 6
+f 4 5 1
+f 4 1 0
+f 2 3 7
+f 2 7 6
+```
+
 ```c
 #include <sop/sop.h>
+#include <string.h>
+#include <stdio.h>
+#include <fs/fs.h>
 
 static int
 oncomment(const sop_parser_state_t *state,
@@ -75,29 +104,19 @@ onface(const sop_parser_state_t *state,
        const sop_parser_line_state_t line);
 
 int main(void) {
-  const char *src = OBJ(
-    ## This is a comment \n
-    v -0.5 -0.5 +0.5 \n
-    v +0.5 -0.5 +0.5 \n
-    v -0.5 +0.5 +0.5 \n
-    v +0.5 +0.5 +0.5 \n
-    v -0.5 -0.5 -0.5 \n
-    v +0.5 -0.5 -0.5 \n
-    v -0.5 +0.5 -0.5 \n
-    v +0.5 +0.5 -0.5 \n
-    f 0 1 3 \n
-    f 0 3 2 \n
-    f 1 5 7 \n
-    f 1 7 3 \n
-    f 5 4 6 \n
-    f 5 6 7 \n
-    f 4 0 2 \n
-    f 4 2 6 \n
-    f 4 5 1 \n
-    f 4 1 0 \n
-    f 2 3 7 \n
-    f 2 7 6 \n
-  );
+  const char *src = fs_read("cube.obj");
+  sop_parser_t parser;
+  sop_parser_options_t options = {
+    .callbacks = {
+      .oncomment = oncomment,
+      .ontexture = ontexture,
+      .onvertex = onvertex,
+      .onface = onface
+    }
+  };
+
+  assert(SOP_EOK == sop_parser_init(&parser, &options));
+  assert(SOP_EOK == sop_parser_execute(&parser, src, strlen(src)));
 
   return 0;
 }
