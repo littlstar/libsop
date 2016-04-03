@@ -1,4 +1,4 @@
-# libsop
+# Simple OBJ Parser (SOP)
 
 Simple OBJ File Format Parser written in C99.
 This library makes it easy to parse OBJ files for quickly loading
@@ -14,8 +14,8 @@ can be built from source or consumed with
 
 Building from source is simple:
 
-* Clone the repository `git clone git@github.com:littlstar/libsop.git`
-* Change directory to project directory `cd libsop`
+* Clone the repository `git clone git@github.com:littlstar/sop.git`
+* Change directory to project directory `cd sop`
 * Build the library `make`
 * Run tests `make test`
 * Install into system `make install` (Uninstall with `make uninstall`)
@@ -27,7 +27,7 @@ Building from source is simple:
 #### Installing library source into your project
 
 ```sh
-$ clib install littlstar/libsop --save
+$ clib install littlstar/sop --save
 ```
 
 #### Adding source to your project
