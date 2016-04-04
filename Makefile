@@ -50,7 +50,7 @@ test: $(TARGET_STATIC)
 .PHONY: install
 install: $(TARGET_STATIC)
 	$(CP) -r include/* $(PREFIX)/include/
-	$(CP)  $(TARGET_STATIC) $(PREFIX)/lib
+	$(CP) $(TARGET_STATIC) $(PREFIX)/lib
 
 ## Uninstalls library from system
 .PHONY: uninstall

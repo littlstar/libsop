@@ -3,8 +3,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include <glfw-shell/glfw-shell.h>
 #include <glisy/glisy.h>
-#include <GLFW/glfw3.h>
 #include <sop/sop.h>
 #include <fs/fs.h>
 
@@ -18,37 +18,6 @@
 #define dtor(d) d * (M_PI / 180)
 #define min(a, b) (a < b ? a : b < a ? b : a)
 #define max(a, b) (a > b ? a : b > a ? b : a)
-
-#define GL_CONTEXT_INIT() \
-  if (!glfwInit()) return 1; \
-  glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); \
-  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); \
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); \
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2); \
-  window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_NAME, 0, 0); \
-  if (!window) { return glfwTerminate(), 1; } \
-  glfwMakeContextCurrent(window); \
-  printf("OpenGL %s, GLSL %s\n", \
-      glGetString(GL_VERSION), \
-      glGetString(GL_SHADING_LANGUAGE_VERSION));
-
-#define GL_RENDER(cb) { \
-  while (!glfwWindowShouldClose(window)) { \
-    int width; \
-    int height; \
-    glfwGetFramebufferSize(window, &width, &height); \
-    glViewport(0, 0, width, height); \
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f); \
-    glDepthMask(GL_TRUE);\
-    glEnable(GL_DEPTH_TEST); \
-    glEnable(GL_CULL_FACE); \
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); \
-    { cb } \
-    glfwSwapBuffers(window); \
-    glfwPollEvents(); \
-  } \
-  glfwTerminate(); \
-}
 
 #define LoadShader(path) fs_read(path)
 #define CreateProgram(vertex, fragment) ({ \
@@ -239,16 +208,17 @@ main(int argc, const char **argv) {
   }
 
   // init
-  GL_CONTEXT_INIT();
+  GLFW_SHELL_CONTEXT_INIT(3, 2);
+  GLFW_SHELL_WINDOW_INIT(window, WINDOW_WIDTH, WINDOW_HEIGHT);
   program = CreateProgram("shader/vertex.glsl", "shader/fragment.glsl");
   InitializeCamera(&camera, WINDOW_WIDTH, WINDOW_HEIGHT);
   InitializeModel(&model, file);
 
   // move camera behind model
-  camera.fov = 20;
-  camera.position = vec3(0, 0, -1);
+  //camera.fov = 20;
+  camera.position = vec3(0, 0, -2);
 
-  GL_RENDER({
+  GLFW_SHELL_RENDER(window, {
     const float time = glfwGetTime();
     const float angle = time * 20.0f;
     const float radians = dtor(angle);
@@ -391,8 +361,8 @@ InitializeModel(Model *model, const char *objfile) {
   assert(SOP_EOK == sop_parser_init(&parser, &options));
   assert(SOP_EOK == sop_parser_execute(&parser, src, strlen(src)));
 
-  printf("vertex count = %d\n", model->verticesLength / 3);
-  printf("face count = %d\n", model->facesLength / 3);
+  printf("*vertex count = %d\n", model->verticesLength / 3);
+  printf("*face count = %d\n", model->facesLength / 3);
 
   // init color
   GlisyColor color;
