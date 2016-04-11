@@ -3,53 +3,32 @@
 #include <stdio.h>
 #include <sop/sop.h>
 
-static int
-ontexture(const sop_parser_state_t *state,
-          const sop_parser_line_state_t line) {
-  return SOP_EOK;
-}
-
-static int
-oncomment(const sop_parser_state_t *state,
-          const sop_parser_line_state_t line) {
-  return SOP_EOK;
-}
-
-static int
-onvertex(const sop_parser_state_t *state,
-         const sop_parser_line_state_t line) {
-  return SOP_EOK;
-}
-
-static int
-onnormal(const sop_parser_state_t *state,
-         const sop_parser_line_state_t line) {
-  return SOP_EOK;
-}
-
-static int
-onface(const sop_parser_state_t *state,
-       const sop_parser_line_state_t line) {
-  return SOP_EOK;
-}
-
 int
 sop_parser_init(sop_parser_t *parser,
                 sop_parser_options_t *options) {
-  if (!parser) return SOP_EMEM;
+  if (!parser) { return SOP_EMEM; }
   memset(parser, 0, sizeof(sop_parser_t));
-#define SET_CALLBACK_IF(cb) \
-  parser->callbacks. cb = options->callbacks. cb ? options->callbacks. cb : cb;
-  SET_CALLBACK_IF(oncomment)
-  SET_CALLBACK_IF(ontexture)
-  SET_CALLBACK_IF(onvertex)
-  SET_CALLBACK_IF(onnormal)
-  SET_CALLBACK_IF(onface)
-#undef SET_CALLBACK_IF
   parser->options = options;
+#define SET_CALLBACK_IF(cb) \
+  parser->callbacks. cb = options->callbacks. cb ? options->callbacks. cb : 0;
+  SET_CALLBACK_IF(on_material_transparency);
+  SET_CALLBACK_IF(on_material_shininess);
+  SET_CALLBACK_IF(on_material_specular);
+  SET_CALLBACK_IF(on_material_ambient);
+  SET_CALLBACK_IF(on_material_diffuse);
+  SET_CALLBACK_IF(on_material_illum);
+  SET_CALLBACK_IF(on_material_lib);
+  SET_CALLBACK_IF(on_material_use);
+  SET_CALLBACK_IF(on_material_new);
+  SET_CALLBACK_IF(on_texture);
+  SET_CALLBACK_IF(on_comment);
+  SET_CALLBACK_IF(on_vertex);
+  SET_CALLBACK_IF(on_normal);
+  SET_CALLBACK_IF(on_smooth);
+  SET_CALLBACK_IF(on_face);
+#undef SET_CALLBACK_IF
   return SOP_EOK;
 }
-
 
 int
 sop_parser_execute(sop_parser_t *parser,
@@ -115,7 +94,6 @@ sop_parser_execute(sop_parser_t *parser,
     if (rc != SOP_EOK) return rc;                \
   }                                              \
 }
-
     // we've reached the end of the line and now need
     // to notify the consumer with a callback, state error,
     // or continue if there is nothing to do
@@ -135,7 +113,7 @@ sop_parser_execute(sop_parser_t *parser,
         // handle comments
         case SOP_COMMENT: {
           line.data = (void *) buffer;
-          CALL_CALLBACK_IF(oncomment, &state, line);
+          CALL_CALLBACK_IF(on_comment, &state, line);
           break;
         }
 
@@ -145,7 +123,7 @@ sop_parser_execute(sop_parser_t *parser,
           sscanf(buffer, "%f %f %f %f",
               &vertex[0], &vertex[1], &vertex[2], &vertex[3]);
           line.data = vertex;
-          CALL_CALLBACK_IF(ontexture, &state, line);
+          CALL_CALLBACK_IF(on_texture, &state, line);
           break;
         }
 
@@ -154,7 +132,7 @@ sop_parser_execute(sop_parser_t *parser,
           sscanf(buffer, "%f %f %f %f",
               &vertex[0], &vertex[1], &vertex[2], &vertex[3]);
           line.data = vertex;
-          CALL_CALLBACK_IF(onnormal, &state, line);
+          CALL_CALLBACK_IF(on_normal, &state, line);
           break;
         }
 
@@ -163,7 +141,7 @@ sop_parser_execute(sop_parser_t *parser,
           sscanf(buffer, "%f %f %f %f",
               &vertex[0], &vertex[1], &vertex[2], &vertex[3]);
           line.data = vertex;
-          CALL_CALLBACK_IF(onvertex, &state, line);
+          CALL_CALLBACK_IF(on_vertex, &state, line);
           break;
         }
 
@@ -253,7 +231,90 @@ read_face_data:
           }
 
           line.data = faces;
-          CALL_CALLBACK_IF(onface, &state, line)
+          CALL_CALLBACK_IF(on_face, &state, line)
+          break;
+        }
+
+        case SOP_DIRECTIVE_USE_MTL: {
+          line.data = (void *) buffer;
+          CALL_CALLBACK_IF(on_material_use, &state, line);
+          break;
+        }
+
+        case SOP_DIRECTIVE_MTL_LIB: {
+          line.data = (void *) buffer;
+          CALL_CALLBACK_IF(on_material_lib, &state, line);
+          break;
+        }
+
+        case SOP_DIRECTIVE_MATERIAL_NEW: {
+          line.data = (void *) buffer;
+          CALL_CALLBACK_IF(on_material_new, &state, line);
+          break;
+        }
+
+        case SOP_DIRECTIVE_MATERIAL_AMBIENT_COLOR: {
+          float color[4];
+          sscanf(buffer, "%f %f %f %f",
+                 &color[0], &color[1], &color[2], &color[3]);
+          line.data = color;
+          CALL_CALLBACK_IF(on_material_ambient, &state, line);
+          break;
+        }
+
+        case SOP_DIRECTIVE_MATERIAL_DIFFUSE_COLOR: {
+          float color[4];
+          sscanf(buffer, "%f %f %f %f",
+                 &color[0], &color[1], &color[2], &color[3]);
+          line.data = color;
+          CALL_CALLBACK_IF(on_material_diffuse, &state, line);
+          break;
+        }
+
+        case SOP_DIRECTIVE_MATERIAL_SPECULAR_COLOR: {
+          float color[4];
+          sscanf(buffer, "%f %f %f %f",
+                 &color[0], &color[1], &color[2], &color[3]);
+          line.data = color;
+          CALL_CALLBACK_IF(on_material_specular, &state, line);
+          break;
+        }
+
+        case SOP_DIRECTIVE_MATERIAL_ILLUM: {
+          unsigned int illum = 0;
+          sscanf(buffer, "%d", &illum);
+          line.data = &illum;
+          CALL_CALLBACK_IF(on_material_illum, &state, line);
+          break;
+        }
+
+        case SOP_DIRECTIVE_MATERIAL_SHININESS: {
+          unsigned int shininess = 0;
+          sscanf(buffer, "%d", &shininess);
+          line.data = &shininess;
+          CALL_CALLBACK_IF(on_material_shininess, &state, line);
+          break;
+        }
+
+        case SOP_DIRECTIVE_MATERIAL_TRANSPARENCY: {
+          unsigned int transparency = 0;
+          sscanf(buffer, "%d", &transparency);
+          line.data = &transparency;
+          CALL_CALLBACK_IF(on_material_transparency, &state, line);
+          break;
+        }
+
+        case SOP_DIRECTIVE_SMOOTH: {
+          int on = 1;
+          int off = 0;
+          if (strcmp(buffer, "on") >= 0) {
+            line.data = (int *) &on;
+          } else if (strcmp(buffer, "off") >= 0) {
+            line.data = (int *) &off;
+          } else {
+            return SOP_OOB;
+          }
+          CALL_CALLBACK_IF(on_smooth, &state, line);
           break;
         }
 
@@ -293,6 +354,53 @@ read_face_data:
       } else if ('#' == ch0) {
         type = SOP_COMMENT;
         line.directive = "#";
+      } else if ('u' == ch0) {
+        type = SOP_DIRECTIVE_USE_MTL;
+        line.directive = "usemtl";
+        i += 5; // 5 == strlen("usemtl") - 1;
+      } else if ('m' == ch0) {
+        type = SOP_DIRECTIVE_MTL_LIB;
+        line.directive = "mtllib";
+        i += 5; // 5 == strlen("mtllib") - 1;
+      } else if ('n' == ch0) {
+        type = SOP_DIRECTIVE_MATERIAL_NEW;
+        line.directive = "newmtl";
+        i += 5; // 5 == strlen("newmtl") - 1;
+      } else if ('i' == ch0) {
+        type = SOP_DIRECTIVE_MATERIAL_ILLUM;
+        line.directive = "illum";
+        i += 4; // 4 == strlen("illum") - 1;
+      } else if ('d' == ch0 || ('T' == ch0 && 'r' == ch1)) {
+        type = SOP_DIRECTIVE_MATERIAL_TRANSPARENCY;
+        if ('d' == ch0) {
+          line.directive = "d";
+        } else {
+          line.directive = "Tr";
+          (void) i++;
+        }
+      } else if ('N' == ch0 && 's' == ch1) {
+        type = SOP_DIRECTIVE_MATERIAL_SHININESS;
+        line.directive = "Ns";
+        (void) i++;
+      } else if ('K' == ch0) {
+        if ('a' == ch1) {
+          type = SOP_DIRECTIVE_MATERIAL_AMBIENT_COLOR;
+          line.directive = "Ka";
+        } else if ('d' == ch1) {
+          type = SOP_DIRECTIVE_MATERIAL_DIFFUSE_COLOR;
+          line.directive = "Kd";
+        } else if ('s' == ch1) {
+          type = SOP_DIRECTIVE_MATERIAL_SPECULAR_COLOR;
+          line.directive = "Ks";
+        } else {
+          type = SOP_NULL;
+          continue;
+        }
+
+        (void) i++;
+      } else if ('s' == ch0) {
+        type = SOP_DIRECTIVE_SMOOTH;
+        line.directive = "s";
       } else {
         switch (ch0) {
           case '\n':

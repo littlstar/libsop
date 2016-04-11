@@ -1,14 +1,16 @@
 #include "test.h"
 
+TEST(material);
 TEST(simple);
 TEST(teapot);
 TEST(teddy);
 
 int
 main (void) {
-  RUN(simple);
-  RUN(teapot);
-  RUN(teddy);
+  RUN(material);
+  //RUN(simple);
+  //RUN(teapot);
+  //RUN(teddy);
   return 0;
 }
 

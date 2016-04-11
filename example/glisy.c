@@ -128,24 +128,24 @@ InitializeCamera(Camera *camera, int width, int height) {
  */
 
 static int
-ontexture(const sop_parser_state_t *state,
+on_texture(const sop_parser_state_t *state,
+           const sop_parser_line_state_t line);
+
+static int
+on_comment(const sop_parser_state_t *state,
           const sop_parser_line_state_t line);
 
 static int
-oncomment(const sop_parser_state_t *state,
+on_vertex(const sop_parser_state_t *state,
+         const sop_parser_line_state_t line);
+
+static int
+on_normal(const sop_parser_state_t *state,
           const sop_parser_line_state_t line);
 
 static int
-onvertex(const sop_parser_state_t *state,
-         const sop_parser_line_state_t line);
-
-static int
-onnormal(const sop_parser_state_t *state,
-         const sop_parser_line_state_t line);
-
-static int
-onface(const sop_parser_state_t *state,
-       const sop_parser_line_state_t line);
+on_face(const sop_parser_state_t *state,
+        const sop_parser_line_state_t line);
 
 /**
  * simple model
@@ -244,7 +244,7 @@ main(int argc, const char **argv) {
 }
 
 static int
-oncomment(const sop_parser_state_t *state,
+on_comment(const sop_parser_state_t *state,
           const sop_parser_line_state_t line) {
   if (line.length && line.data) {
     //printf("%s\n", (char *) line.data);
@@ -253,7 +253,7 @@ oncomment(const sop_parser_state_t *state,
 }
 
 static int
-onvertex(const sop_parser_state_t *state,
+on_vertex(const sop_parser_state_t *state,
          const sop_parser_line_state_t line) {
   Model *model = (Model *) state->data;
   float vertex[3];
@@ -286,7 +286,7 @@ onvertex(const sop_parser_state_t *state,
 }
 
 static int
-onface(const sop_parser_state_t *state,
+on_face(const sop_parser_state_t *state,
        const sop_parser_line_state_t line) {
   Model *model = (Model *) state->data;
   int face[3][3];
@@ -336,9 +336,9 @@ InitializeModel(Model *model, const char *objfile) {
   sop_parser_t parser;
   sop_parser_options_t options = {
     .callbacks = {
-      .oncomment = oncomment,
-      .onvertex = onvertex,
-      .onface = onface,
+      .on_comment = on_comment,
+      .on_vertex = on_vertex,
+      .on_face = on_face,
     }
   };
 
@@ -421,7 +421,7 @@ void
 DrawModel(Model *model) {
   UpdateModel(model);
   glisyGeometryBind(&model->geometry, 0);
-  glisyGeometryDraw(&model->geometry, GL_LINE_STRIP, 0, model->facesLength);
+  glisyGeometryDraw(&model->geometry, GL_TRIANGLES, 0, model->facesLength);
   glisyGeometryUnbind(&model->geometry);
 }
 
