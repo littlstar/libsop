@@ -46,19 +46,49 @@ enum sop_enum {
   SOP_COMMENT,
 
   /**
-   * OBJ directive types (http://www.martinreddy.net/gfx/3d/OBJ.spec)
+   * OBJ directive types
+   *  See: (http://www.martinreddy.net/gfx/3d/OBJ.spec)
    *
    * Vertex data:
-   *  - geometric vertices (v)
-   *  - texture vertices (vt)
-   *  - vertex normals (vn)
-   *  - face (f)
+   *   - (v) geometric vertices
+   *   - (vt) texture vertices
+   *   - (vn) vertex normals
+   *   - (f) face
+   *   - (usemtl) material name
+   *   - (mtllib) material library
    */
 
   SOP_DIRECTIVE_VERTEX,
   SOP_DIRECTIVE_VERTEX_TEXTURE,
   SOP_DIRECTIVE_VERTEX_NORMAL,
   SOP_DIRECTIVE_FACE,
+  SOP_DIRECTIVE_USE_MTL,
+  SOP_DIRECTIVE_MTL_LIB,
+
+  /**
+   * Material lib types.
+   *   See: (http://web.cse.ohio-state.edu/~hwshen/581/Site/Lab3_files/Labhelp_Obj_parser.htm)
+   *
+   * Material data:
+   *   - (newmtl) Start a definition of a new material
+   *   - (Ka) ambient color (r,g,b)
+   *   - (Kd) diffuse color (r,g,b)
+   *   - (Ks) specular color (r,g,b)
+   *   - (illum) Define the illumination model:
+   *     - [0] no illumination
+   *     - [1] a flat material with no specular highlights
+   *     - [2] denotes the presence of specular highlights
+   *   - (Ns) shininess of the material
+   *   - (d or Tr) the transparency of the material
+   */
+
+  SOP_DIRECTIVE_MATERIAL_NEW,
+  SOP_DIRECTIVE_MATERIAL_AMBIENT_COLOR,
+  SOP_DIRECTIVE_MATERIAL_DIFFUSE_COLOR,
+  SOP_DIRECTIVE_MATERIAL_SPECULAR_COLOR,
+  SOP_DIRECTIVE_MATERIAL_ILLUM,
+  SOP_DIRECTIVE_MATERIAL_SHININESS,
+  SOP_DIRECTIVE_MATERIAL_TRANSPARENCY,
 };
 
 /**
@@ -67,12 +97,21 @@ enum sop_enum {
  * defining a struct or typedef.
  */
 
-#define SOP_PARSER_CALLBACK_FIELDS \
-  sop_parser_line_cb ontexture;    \
-  sop_parser_line_cb oncomment;    \
-  sop_parser_line_cb onvertex;     \
-  sop_parser_line_cb onnormal;     \
-  sop_parser_line_cb onface;       \
+#define SOP_PARSER_CALLBACK_FIELDS             \
+  sop_parser_line_cb on_material_transparency; \
+  sop_parser_line_cb on_material_shininess;    \
+  sop_parser_line_cb on_material_specular;     \
+  sop_parser_line_cb on_material_ambient;      \
+  sop_parser_line_cb on_material_diffuse;      \
+  sop_parser_line_cb on_material_illum;        \
+  sop_parser_line_cb on_material_lib;          \
+  sop_parser_line_cb on_material_use;          \
+  sop_parser_line_cb on_material_new;          \
+  sop_parser_line_cb on_texture;               \
+  sop_parser_line_cb on_comment;               \
+  sop_parser_line_cb on_vertex;                \
+  sop_parser_line_cb on_normal;                \
+  sop_parser_line_cb on_face;                  \
 
 /**
  * This structure represents the options available for initializing the

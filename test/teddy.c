@@ -10,22 +10,22 @@
 #include "test.h"
 
 static int
-oncomment(const sop_parser_state_t *state,
+on_comment(const sop_parser_state_t *state,
           const sop_parser_line_state_t line);
 static int
-onvertex(const sop_parser_state_t *state,
+on_vertex(const sop_parser_state_t *state,
          const sop_parser_line_state_t line);
 
 static int
-onface(const sop_parser_state_t *state,
+on_face(const sop_parser_state_t *state,
        const sop_parser_line_state_t line);
 
 static sop_parser_t parser;
 static sop_parser_options_t options = {
   .callbacks = {
-    .oncomment = oncomment,
-    .onvertex = onvertex,
-    .onface = onface,
+    .on_comment = on_comment,
+    .on_vertex = on_vertex,
+    .on_face = on_face,
   }
 };
 
@@ -67,14 +67,14 @@ TEST(teddy) {
 }
 
 static int
-oncomment(const sop_parser_state_t *state,
-          const sop_parser_line_state_t line) {
+on_comment(const sop_parser_state_t *state,
+           const sop_parser_line_state_t line) {
   char message[BUFSIZ];
   TestState.counters.comments++;
   if (line.data && strlen((char *) line.data)) {
     assert(line.length);
     sprintf(message,
-            "teddy: .oncomment: comment line %d has length set",
+            "teddy: .on_comment: comment line %d has length set",
             TestState.counters.comments);
     ok(message);
   }
@@ -82,8 +82,8 @@ oncomment(const sop_parser_state_t *state,
 }
 
 static int
-onvertex(const sop_parser_state_t *state,
-         const sop_parser_line_state_t line) {
+on_vertex(const sop_parser_state_t *state,
+          const sop_parser_line_state_t line) {
   // (x y z) - we ignore w component
   TestState.counters.vertices++;
   if (line.data) {
@@ -94,8 +94,8 @@ onvertex(const sop_parser_state_t *state,
 }
 
 static int
-onface(const sop_parser_state_t *state,
-       const sop_parser_line_state_t line) {
+on_face(const sop_parser_state_t *state,
+        const sop_parser_line_state_t line) {
   TestState.counters.faces++;
   if (line.data) {
     assert(line.length);
