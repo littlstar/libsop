@@ -1,6 +1,6 @@
 {
   "name": "sop",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "repo": "littlstar/sop",
   "description": "Simple OBJ File Format Parser written in C99",
   "keywords": [
