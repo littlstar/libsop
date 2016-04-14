@@ -8,9 +8,9 @@ TEST(teddy);
 int
 main (void) {
   RUN(material);
-  //RUN(simple);
-  //RUN(teapot);
-  //RUN(teddy);
+  RUN(simple);
+  RUN(teapot);
+  RUN(teddy);
   return 0;
 }
 
