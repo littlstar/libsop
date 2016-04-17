@@ -146,7 +146,7 @@ sop_parser_execute(sop_parser_t *parser,
         }
 
         case SOP_DIRECTIVE_FACE: {
-          int maxfaces = 16;
+          int maxfaces = 3;
           int faces[3][maxfaces];
 
           // vertex faces
